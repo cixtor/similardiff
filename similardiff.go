@@ -64,3 +64,10 @@ func (s *SimilarDiff) SetChanges(name string) {
 		})
 	}
 }
+
+func (s *SimilarDiff) FindChanges() {
+	/* discard errors; exit(1) means there are differences */
+	out, _ := exec.Command("/usr/bin/diff", s.FileA, s.FileB).CombinedOutput()
+	s.Lines = strings.Split(string(out), "\n")
+	s.Total = len(s.Lines)
+}
