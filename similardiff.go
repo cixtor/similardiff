@@ -42,3 +42,25 @@ func (s *SimilarDiff) SetFileA(name string) {
 func (s *SimilarDiff) SetFileB(name string) {
 	s.FileB = name
 }
+
+func (s *SimilarDiff) SetChanges(name string) {
+	var parts []string
+
+	changes := strings.Split(name, ",")
+
+	for _, change := range changes {
+		if len(change) < 3 {
+			continue
+		}
+
+		if !strings.Contains(change, ":") {
+			continue
+		}
+
+		parts = strings.Split(change, ":")
+		s.Changes = append(s.Changes, SimilarDiffChange{
+			Old: parts[0],
+			New: parts[1],
+		})
+	}
+}
