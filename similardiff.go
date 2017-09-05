@@ -71,3 +71,40 @@ func (s *SimilarDiff) FindChanges() {
 	s.Lines = strings.Split(string(out), "\n")
 	s.Total = len(s.Lines)
 }
+
+func (s *SimilarDiff) CaptureChanges() {
+	for idx := 0; idx < s.Total; idx++ {
+		s.Cursor = idx
+
+		if s.CaptureSingleLine() {
+			idx = s.Cursor
+			continue
+		}
+	}
+}
+
+// CaptureSingleLine processes single-line diff.
+// 1c1 | changed line (file A, file B)
+// < A | content in file A
+// --- | change separator
+// > B | content in file B
+func (s *SimilarDiff) CaptureSingleLine() bool {
+	heads := regexp.MustCompile(`^([0-9]+)c([0-9]+)$`)
+
+	if heads.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := heads.FindStringSubmatch(s.Lines[s.Cursor])
+
+	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Left:      s.Lines[s.Cursor+1][2:],
+		Right:     s.Lines[s.Cursor+3][2:],
+		LeftLine:  s.ConvertAtoi(m[1]),
+		RightLine: s.ConvertAtoi(m[2]),
+	})
+
+	s.Cursor += 3
+
+	return true
+}
