@@ -80,6 +80,11 @@ func (s *SimilarDiff) CaptureChanges() {
 			idx = s.Cursor
 			continue
 		}
+
+		if s.CaptureMultipleLine() {
+			idx = s.Cursor
+			continue
+		}
 	}
 }
 
@@ -105,6 +110,56 @@ func (s *SimilarDiff) CaptureSingleLine() bool {
 	})
 
 	s.Cursor += 3
+
+	return true
+}
+
+// CaptureMultipleLine processes multiple-line diff.
+// 1,3c7,9 | changed lines (file A, file B)
+// < A     | content in file A, line 1
+// < B     | content in file A, line 2
+// < C     | content in file A, line 3
+// ---     | change separator
+// > X     | content in file B, line 7
+// > Y     | content in file B, line 8
+// > Z     | content in file B, line 9
+func (s *SimilarDiff) CaptureMultipleLine() bool {
+	headm := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
+
+	if headm.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	var howmany int
+
+	m := headm.FindStringSubmatch(s.Lines[s.Cursor])
+	numLeftA := s.ConvertAtoi(m[1])  /* 1,3c7,9 -> 1 */
+	numLeftB := s.ConvertAtoi(m[2])  /* 1,3c7,9 -> 3 */
+	numRightA := s.ConvertAtoi(m[3]) /* 1,3c7,9 -> 7 */
+	numRightB := s.ConvertAtoi(m[4]) /* 1,3c7,9 -> 9 */
+
+	howmany = (numLeftB - numLeftA) + 1 /* inclusive */
+	subgroups := make([]SimilarDiffPair, howmany)
+
+	s.Cursor++ /* skip multiple-line diff header */
+
+	for i := 0; i < howmany; i++ {
+		subgroups[i].Left = s.Lines[s.Cursor+i][2:]
+		subgroups[i].LeftLine = numLeftA + i
+	}
+
+	s.Cursor += howmany + 1 /* left matches + separator */
+
+	howmany = (numRightB - numRightA) + 1 /* inclusive */
+
+	for i := 0; i < howmany; i++ {
+		subgroups[i].Right = s.Lines[s.Cursor+i][2:]
+		subgroups[i].RightLine = numRightA + i
+	}
+
+	for _, group := range subgroups {
+		s.Pairs = append(s.Pairs, group)
+	}
 
 	return true
 }
