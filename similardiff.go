@@ -163,3 +163,29 @@ func (s *SimilarDiff) CaptureMultipleLine() bool {
 
 	return true
 }
+
+func (s *SimilarDiff) DiscardSimilarities() {
+	var temp string
+	var group SimilarDiffPair
+
+	totalPairs := len(s.Pairs)
+	notDiscarded := make([]SimilarDiffPair, 0)
+
+	for i := 0; i < totalPairs; i++ {
+		group = s.Pairs[i]
+		temp = group.Left
+
+		for _, change := range s.Changes {
+			temp = strings.Replace(temp, change.Old, change.New, -1)
+		}
+
+		/* lines are similar */
+		if temp == group.Right {
+			continue
+		}
+
+		notDiscarded = append(notDiscarded, group)
+	}
+
+	s.Pairs = notDiscarded
+}
