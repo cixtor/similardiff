@@ -189,3 +189,25 @@ func (s *SimilarDiff) DiscardSimilarities() {
 
 	s.Pairs = notDiscarded
 }
+
+func (s *SimilarDiff) PrettyPrint() {
+	s.FindChanges() /* read and run diff */
+
+	s.CaptureChanges() /* find and process */
+
+	s.DiscardSimilarities()
+
+	/* there are no changes */
+	if len(s.Pairs) <= 0 {
+		return
+	}
+
+	fmt.Printf("--- %s\n", s.FileA)
+	fmt.Printf("+++ %s\n", s.FileB)
+
+	for _, group := range s.Pairs {
+		fmt.Printf("@@ -%d +%d @@\n", group.LeftLine, group.RightLine)
+		fmt.Printf("-%s\n", group.Left)
+		fmt.Printf("+%s\n", group.Right)
+	}
+}
