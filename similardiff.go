@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -10,13 +11,14 @@ import (
 )
 
 type SimilarDiff struct {
-	Cursor  int
-	FileA   string
-	FileB   string
-	Lines   []string
-	Pairs   []SimilarDiffPair
-	Changes []SimilarDiffChange
-	Total   int
+	Cursor   int
+	FileA    string
+	FileB    string
+	Lines    []string
+	Pairs    []SimilarDiffPair
+	Changes  []SimilarDiffChange
+	Colorize bool
+	Total    int
 }
 
 type SimilarDiffPair struct {
@@ -41,6 +43,10 @@ func (s *SimilarDiff) SetFileA(name string) {
 
 func (s *SimilarDiff) SetFileB(name string) {
 	s.FileB = name
+}
+
+func (s *SimilarDiff) SetColorize(value string) {
+	s.Colorize = (value == "true")
 }
 
 func (s *SimilarDiff) SetChanges(name string) {
@@ -76,31 +82,31 @@ func (s *SimilarDiff) CaptureChanges() {
 	for idx := 0; idx < s.Total; idx++ {
 		s.Cursor = idx
 
-		if s.CaptureSingleLine() {
+		if s.CaptureChangedLinesOne() {
 			idx = s.Cursor
 			continue
 		}
 
-		if s.CaptureMultipleLine() {
+		if s.CaptureChangedLinesMany() {
 			idx = s.Cursor
 			continue
 		}
 	}
 }
 
-// CaptureSingleLine processes single-line diff.
+// CaptureChangedLinesOne detects and captures single-line diff.
 // 1c1 | changed line (file A, file B)
 // < A | content in file A
 // --- | change separator
 // > B | content in file B
-func (s *SimilarDiff) CaptureSingleLine() bool {
-	heads := regexp.MustCompile(`^([0-9]+)c([0-9]+)$`)
+func (s *SimilarDiff) CaptureChangedLinesOne() bool {
+	header := regexp.MustCompile(`^([0-9]+)c([0-9]+)$`)
 
-	if heads.FindString(s.Lines[s.Cursor]) == "" {
+	if header.FindString(s.Lines[s.Cursor]) == "" {
 		return false
 	}
 
-	m := heads.FindStringSubmatch(s.Lines[s.Cursor])
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
 
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
 		Left:      s.Lines[s.Cursor+1][2:],
@@ -114,7 +120,7 @@ func (s *SimilarDiff) CaptureSingleLine() bool {
 	return true
 }
 
-// CaptureMultipleLine processes multiple-line diff.
+// CaptureChangedLinesMany detects and captures multiple-line diff.
 // 1,3c7,9 | changed lines (file A, file B)
 // < A     | content in file A, line 1
 // < B     | content in file A, line 2
@@ -123,16 +129,16 @@ func (s *SimilarDiff) CaptureSingleLine() bool {
 // > X     | content in file B, line 7
 // > Y     | content in file B, line 8
 // > Z     | content in file B, line 9
-func (s *SimilarDiff) CaptureMultipleLine() bool {
-	headm := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
+func (s *SimilarDiff) CaptureChangedLinesMany() bool {
+	header := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
 
-	if headm.FindString(s.Lines[s.Cursor]) == "" {
+	if header.FindString(s.Lines[s.Cursor]) == "" {
 		return false
 	}
 
 	var howmany int
 
-	m := headm.FindStringSubmatch(s.Lines[s.Cursor])
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
 	numLeftA := s.ConvertAtoi(m[1])  /* 1,3c7,9 -> 1 */
 	numLeftB := s.ConvertAtoi(m[2])  /* 1,3c7,9 -> 3 */
 	numRightA := s.ConvertAtoi(m[3]) /* 1,3c7,9 -> 7 */
@@ -141,7 +147,7 @@ func (s *SimilarDiff) CaptureMultipleLine() bool {
 	howmany = (numLeftB - numLeftA) + 1 /* inclusive */
 	subgroups := make([]SimilarDiffPair, howmany)
 
-	s.Cursor++ /* skip multiple-line diff header */
+	s.Cursor++ /* skip diff header */
 
 	for i := 0; i < howmany; i++ {
 		subgroups[i].Left = s.Lines[s.Cursor+i][2:]
@@ -202,13 +208,15 @@ func (s *SimilarDiff) PrettyPrint() {
 		return
 	}
 
-	fmt.Printf("--- %s\n", s.FileA)
-	fmt.Printf("+++ %s\n", s.FileB)
+	s.PrintRed("--- %s", s.FileA)
+	s.PrintGreen("+++ %s", s.FileB)
 
 	for _, group := range s.Pairs {
-		fmt.Printf("@@ -%d +%d @@\n", group.LeftLine, group.RightLine)
-		fmt.Printf("-%s\n", group.Left)
-		fmt.Printf("+%s\n", group.Right)
+		if group.LeftLine > 0 {
+			s.PrintRed("%d\t-%s", group.LeftLine, group.Left)
+		}
+
+		s.PrintGreen("%d\t+%s", group.RightLine, group.Right)
 	}
 }
 
@@ -222,6 +230,34 @@ func (s *SimilarDiff) ConvertAtoi(number string) int {
 	return num
 }
 
+func (s *SimilarDiff) PrintRed(format string, text ...interface{}) {
+	if s.Colorize {
+		fmt.Print("\033[0;31m")
+	}
+
+	fmt.Printf(format, text...)
+
+	if s.Colorize {
+		fmt.Print("\033[0m")
+	}
+
+	fmt.Print("\n")
+}
+
+func (s *SimilarDiff) PrintGreen(format string, text ...interface{}) {
+	if s.Colorize {
+		fmt.Print("\033[0;32m")
+	}
+
+	fmt.Printf(format, text...)
+
+	if s.Colorize {
+		fmt.Print("\033[0m")
+	}
+
+	fmt.Print("\n")
+}
+
 func main() {
 	flag.Parse()
 
@@ -230,6 +266,7 @@ func main() {
 	s.SetFileA(flag.Arg(0))
 	s.SetFileB(flag.Arg(1))
 	s.SetChanges(flag.Arg(2))
+	s.SetColorize(os.Getenv("SIMILARDIFF_COLOR"))
 
 	s.PrettyPrint()
 }
