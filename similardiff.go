@@ -211,3 +211,25 @@ func (s *SimilarDiff) PrettyPrint() {
 		fmt.Printf("+%s\n", group.Right)
 	}
 }
+
+func (s *SimilarDiff) ConvertAtoi(number string) int {
+	num, err := strconv.Atoi(number)
+
+	if err != nil {
+		return 0
+	}
+
+	return num
+}
+
+func main() {
+	flag.Parse()
+
+	s := NewSimilarDiff()
+
+	s.SetFileA(flag.Arg(0))
+	s.SetFileB(flag.Arg(1))
+	s.SetChanges(flag.Arg(2))
+
+	s.PrettyPrint()
+}
