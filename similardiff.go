@@ -92,6 +92,11 @@ func (s *SimilarDiff) CaptureChanges() {
 			continue
 		}
 
+		if s.CaptureDeletedLines() {
+			idx = s.Cursor
+			continue
+		}
+
 		if s.CaptureAddedLines() {
 			idx = s.Cursor
 			continue
@@ -175,6 +180,34 @@ func (s *SimilarDiff) CaptureChangedLinesMany() bool {
 	return true
 }
 
+// CaptureDeletedLines detects and captures deleted lines.
+// 10,13d5 | changed lines (file A, file B)
+// < W     | content in file A, line 10
+// < X     | content in file A, line 11
+// < Y     | content in file A, line 12
+// < Z     | content in file A, line 13
+func (s *SimilarDiff) CaptureDeletedLines() bool {
+	header := regexp.MustCompile(`^([0-9]+),([0-9]+)d([0-9]+)$`)
+
+	if header.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
+	numLeftA := s.ConvertAtoi(m[1]) /* 10,13d5 -> 10 */
+	numLeftB := s.ConvertAtoi(m[2]) /* 10,13d5 -> 13 */
+
+	for i := numLeftA; i <= numLeftB; i++ {
+		s.Cursor++ /* move cursor ahead */
+		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Left:     s.Lines[s.Cursor][2:],
+			LeftLine: i, /* real line number */
+		})
+	}
+
+	return true
+}
+
 // CaptureAddedLines detects and captures added lines.
 // 5a10,13 | changed lines (file A, file B)
 // > W     | content in file B, line 10
@@ -249,7 +282,9 @@ func (s *SimilarDiff) PrettyPrint() {
 			s.PrintRed("%d\t-%s", group.LeftLine, group.Left)
 		}
 
-		s.PrintGreen("%d\t+%s", group.RightLine, group.Right)
+		if group.RightLine > 0 {
+			s.PrintGreen("%d\t+%s", group.RightLine, group.Right)
+		}
 	}
 }
 
