@@ -91,6 +91,11 @@ func (s *SimilarDiff) CaptureChanges() {
 			idx = s.Cursor
 			continue
 		}
+
+		if s.CaptureAddedLines() {
+			idx = s.Cursor
+			continue
+		}
 	}
 }
 
@@ -165,6 +170,34 @@ func (s *SimilarDiff) CaptureChangedLinesMany() bool {
 
 	for _, group := range subgroups {
 		s.Pairs = append(s.Pairs, group)
+	}
+
+	return true
+}
+
+// CaptureAddedLines detects and captures added lines.
+// 5a10,13 | changed lines (file A, file B)
+// > W     | content in file B, line 10
+// > X     | content in file B, line 11
+// > Y     | content in file B, line 12
+// > Z     | content in file B, line 13
+func (s *SimilarDiff) CaptureAddedLines() bool {
+	header := regexp.MustCompile(`^([0-9]+)a([0-9]+),([0-9]+)$`)
+
+	if header.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
+	numRightA := s.ConvertAtoi(m[2]) /* 5a10,13 -> 10 */
+	numRightB := s.ConvertAtoi(m[3]) /* 5a10,13 -> 13 */
+
+	for i := numRightA; i <= numRightB; i++ {
+		s.Cursor++ /* move cursor ahead */
+		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Right:     s.Lines[s.Cursor][2:],
+			RightLine: i, /* real line number */
+		})
 	}
 
 	return true
