@@ -135,3 +135,60 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 		}
 	}
 }
+
+func TestCaptureDeletedLines(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"10,13d5",
+		"< W     | content in file A, line 10",
+		"< X     | content in file A, line 11",
+		"< Y     | content in file A, line 12",
+		"< Z     | content in file A, line 13",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 4)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "W     | content in file A, line 10",
+		Right:     "",
+		LeftLine:  10,
+		RightLine: 0,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "X     | content in file A, line 11",
+		Right:     "",
+		LeftLine:  11,
+		RightLine: 0,
+	}
+	expected[2] = SimilarDiffPair{
+		Left:      "Y     | content in file A, line 12",
+		Right:     "",
+		LeftLine:  12,
+		RightLine: 0,
+	}
+	expected[3] = SimilarDiffPair{
+		Left:      "Z     | content in file A, line 13",
+		Right:     "",
+		LeftLine:  13,
+		RightLine: 0,
+	}
+
+	if len(s.Pairs) != 4 {
+		t.Logf("-%d", 4)
+		t.Logf("+%d\n", len(s.Pairs))
+		t.Fatal("Number of detected pairs is incorrect")
+	}
+
+	for i := 0; i < 4; i++ {
+		if s.Pairs[i] != expected[i] {
+			t.Logf("-%#v\n", expected[i])
+			t.Logf("+%#v\n", s.Pairs[i])
+			t.Fatalf("Failure detecting changes in single lines: Index[%d]", i)
+		}
+	}
+}
