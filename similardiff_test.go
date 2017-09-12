@@ -4,6 +4,30 @@ import (
 	"testing"
 )
 
+func CheckTestData(t *testing.T, s *SimilarDiff, total int, expected []SimilarDiffPair) {
+	if len(s.Pairs) != total {
+		t.Logf("-%d", total)
+		t.Logf("+%d\n", len(s.Pairs))
+		t.Fatal("Number of detected pairs is incorrect")
+	}
+
+	if s.Pairs[0] != expected[0] {
+		t.Logf("-%#v\n", expected[0])
+		t.Logf("+%#v\n", s.Pairs[0])
+		t.Fatal("Failure detecting changes in single lines: Index[0]")
+	}
+
+	for i := 0; i < total; i++ {
+		if s.Pairs[i] == expected[i] {
+			continue
+		}
+
+		t.Logf("-%#v\n", expected[i])
+		t.Logf("+%#v\n", s.Pairs[i])
+		t.Fatalf("Failure detecting and processing diff: Index[%d]", i)
+	}
+}
+
 func TestCaptureChangedLinesOne(t *testing.T) {
 	s := NewSimilarDiff()
 
@@ -37,23 +61,7 @@ func TestCaptureChangedLinesOne(t *testing.T) {
 		RightLine: 10,
 	}
 
-	if len(s.Pairs) != 2 {
-		t.Logf("-%d", 2)
-		t.Logf("+%d\n", len(s.Pairs))
-		t.Fatal("Number of detected pairs is incorrect")
-	}
-
-	if s.Pairs[0] != expected[0] {
-		t.Logf("-%#v\n", expected[0])
-		t.Logf("+%#v\n", s.Pairs[0])
-		t.Fatal("Failure detecting changes in single lines: Index[0]")
-	}
-
-	if s.Pairs[1] != expected[1] {
-		t.Logf("-%#v\n", expected[1])
-		t.Logf("+%#v\n", s.Pairs[1])
-		t.Fatal("Failure detecting changes in single lines: Index[1]")
-	}
+	CheckTestData(t, s, 2, expected)
 }
 
 func TestCaptureChangedLinesMany(t *testing.T) {
@@ -121,19 +129,7 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 		RightLine: 22,
 	}
 
-	if len(s.Pairs) != 6 {
-		t.Logf("-%d", 6)
-		t.Logf("+%d\n", len(s.Pairs))
-		t.Fatal("Number of detected pairs is incorrect")
-	}
-
-	for i := 0; i < 6; i++ {
-		if s.Pairs[i] != expected[i] {
-			t.Logf("-%#v\n", expected[i])
-			t.Logf("+%#v\n", s.Pairs[i])
-			t.Fatalf("Failure detecting changes in multiple lines: Index[%d]", i)
-		}
-	}
+	CheckTestData(t, s, 6, expected)
 }
 
 func TestCaptureDeletedLines(t *testing.T) {
@@ -178,19 +174,7 @@ func TestCaptureDeletedLines(t *testing.T) {
 		RightLine: 0,
 	}
 
-	if len(s.Pairs) != 4 {
-		t.Logf("-%d", 4)
-		t.Logf("+%d\n", len(s.Pairs))
-		t.Fatal("Number of detected pairs is incorrect")
-	}
-
-	for i := 0; i < 4; i++ {
-		if s.Pairs[i] != expected[i] {
-			t.Logf("-%#v\n", expected[i])
-			t.Logf("+%#v\n", s.Pairs[i])
-			t.Fatalf("Failure detecting deleted lines in the left file: Index[%d]", i)
-		}
-	}
+	CheckTestData(t, s, 4, expected)
 }
 
 func TestCaptureAddedLines(t *testing.T) {
@@ -235,17 +219,5 @@ func TestCaptureAddedLines(t *testing.T) {
 		RightLine: 13,
 	}
 
-	if len(s.Pairs) != 4 {
-		t.Logf("-%d", 4)
-		t.Logf("+%d\n", len(s.Pairs))
-		t.Fatal("Number of detected pairs is incorrect")
-	}
-
-	for i := 0; i < 4; i++ {
-		if s.Pairs[i] != expected[i] {
-			t.Logf("-%#v\n", expected[i])
-			t.Logf("+%#v\n", s.Pairs[i])
-			t.Fatalf("Failure detecting added lines in the right file: Index[%d]", i)
-		}
-	}
+	CheckTestData(t, s, 4, expected)
 }
