@@ -131,7 +131,7 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 		if s.Pairs[i] != expected[i] {
 			t.Logf("-%#v\n", expected[i])
 			t.Logf("+%#v\n", s.Pairs[i])
-			t.Fatalf("Failure detecting changes in single lines: Index[%d]", i)
+			t.Fatalf("Failure detecting changes in multiple lines: Index[%d]", i)
 		}
 	}
 }
@@ -188,7 +188,64 @@ func TestCaptureDeletedLines(t *testing.T) {
 		if s.Pairs[i] != expected[i] {
 			t.Logf("-%#v\n", expected[i])
 			t.Logf("+%#v\n", s.Pairs[i])
-			t.Fatalf("Failure detecting changes in single lines: Index[%d]", i)
+			t.Fatalf("Failure detecting deleted lines in the left file: Index[%d]", i)
+		}
+	}
+}
+
+func TestCaptureAddedLines(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"5a10,13",
+		"> W     | content in file B, line 10",
+		"> X     | content in file B, line 11",
+		"> Y     | content in file B, line 12",
+		"> Z     | content in file B, line 13",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 4)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "",
+		Right:     "W     | content in file B, line 10",
+		LeftLine:  0,
+		RightLine: 10,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "",
+		Right:     "X     | content in file B, line 11",
+		LeftLine:  0,
+		RightLine: 11,
+	}
+	expected[2] = SimilarDiffPair{
+		Left:      "",
+		Right:     "Y     | content in file B, line 12",
+		LeftLine:  0,
+		RightLine: 12,
+	}
+	expected[3] = SimilarDiffPair{
+		Left:      "",
+		Right:     "Z     | content in file B, line 13",
+		LeftLine:  0,
+		RightLine: 13,
+	}
+
+	if len(s.Pairs) != 4 {
+		t.Logf("-%d", 4)
+		t.Logf("+%d\n", len(s.Pairs))
+		t.Fatal("Number of detected pairs is incorrect")
+	}
+
+	for i := 0; i < 4; i++ {
+		if s.Pairs[i] != expected[i] {
+			t.Logf("-%#v\n", expected[i])
+			t.Logf("+%#v\n", s.Pairs[i])
+			t.Fatalf("Failure detecting added lines in the right file: Index[%d]", i)
 		}
 	}
 }
