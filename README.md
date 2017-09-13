@@ -6,6 +6,21 @@ In computing, the **diff utility** is a [data comparison](https://en.wikipedia.o
 
 Typically, `diff` is used to show the changes between two versions of the same file. Modern implementations also support [binary files](https://en.wikipedia.org/wiki/Binary_file). The output is called a "diff", or a patch, since the output can be applied with the Unix program patch. The output of similar file comparison utilities are also called a "diff"; like the use of the word "grep" for describing the act of searching, the word diff became a generic term for calculating data difference and the results thereof.
 
+### Installation
+
+```
+go get -u github.com/cixtor/similardiff
+```
+
+### Usage
+
+```
+$ export SIMILARDIFF_COLOR=true
+$ similardiff [FILE_A] [FILE_B]
+$ similardiff [FILE_A] [FILE_B] [SIMILARITIES]
+$ similardiff a.txt b.txt "import:include,package:module"
+```
+
 ![screenshot](screenshot.png)
 
 Comparison tools are used for various reasons. When one wishes to compare binary files, byte-level is probably best. But if one wishes to compare text files or computer programs, a side-by-side visual comparison is usually best. This gives the user the chance to decide which file is the preferred one to retain, if the files should be merged to create one containing all of the differences, or perhaps to keep them both as-is for later reference, through some form of "versioning" control.
