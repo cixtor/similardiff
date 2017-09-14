@@ -92,7 +92,12 @@ func (s *SimilarDiff) CaptureChanges() {
 			continue
 		}
 
-		if s.CaptureDeletedLines() {
+		if s.CaptureDeletedLinesOne() {
+			idx = s.Cursor
+			continue
+		}
+
+		if s.CaptureDeletedLinesMany() {
 			idx = s.Cursor
 			continue
 		}
@@ -180,13 +185,37 @@ func (s *SimilarDiff) CaptureChangedLinesMany() bool {
 	return true
 }
 
-// CaptureDeletedLines detects and captures deleted lines.
+// CaptureDeletedLinesOne detects and captures deleted lines.
+// 13d12 | changed lines (file A, file B)
+// < A   | content in file A, line 13
+// 43d22 | changed lines (file A, file B)
+// < B   | content in file A, line 43
+func (s *SimilarDiff) CaptureDeletedLinesOne() bool {
+	header := regexp.MustCompile(`^([0-9]+)d([0-9]+)$`)
+
+	if header.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
+
+	s.Cursor++
+
+	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Left:     s.Lines[s.Cursor][2:],
+		LeftLine: s.ConvertAtoi(m[1]),
+	})
+
+	return true
+}
+
+// CaptureDeletedLinesMany detects and captures deleted lines.
 // 10,13d5 | changed lines (file A, file B)
 // < W     | content in file A, line 10
 // < X     | content in file A, line 11
 // < Y     | content in file A, line 12
 // < Z     | content in file A, line 13
-func (s *SimilarDiff) CaptureDeletedLines() bool {
+func (s *SimilarDiff) CaptureDeletedLinesMany() bool {
 	header := regexp.MustCompile(`^([0-9]+),([0-9]+)d([0-9]+)$`)
 
 	if header.FindString(s.Lines[s.Cursor]) == "" {

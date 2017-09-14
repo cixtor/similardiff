@@ -132,7 +132,39 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 	CheckTestData(t, s, 6, expected)
 }
 
-func TestCaptureDeletedLines(t *testing.T) {
+func TestCaptureDeletedLinesOne(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"13d12",
+		"< A | content in file A, line 13",
+		"43d22",
+		"< B | content in file A, line 43",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 2)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "A | content in file A, line 13",
+		Right:     "",
+		LeftLine:  13,
+		RightLine: 0,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "B | content in file A, line 43",
+		Right:     "",
+		LeftLine:  43,
+		RightLine: 0,
+	}
+
+	CheckTestData(t, s, 2, expected)
+}
+
+func TestCaptureDeletedLinesMany(t *testing.T) {
 	s := NewSimilarDiff()
 
 	s.Lines = []string{
