@@ -21,6 +21,8 @@ $ similardiff [FILE_A] [FILE_B] [SIMILARITIES]
 $ similardiff a.txt b.txt "import:include,package:module"
 ```
 
+In this example, the content of file `a.txt` will be compared with the content of file `b.txt` and for every line with discrepancies the program will execute a string replacement using the labels passed as the third argument in the terminal. Here, any occurrence of the word _"import"_ will be replaced with _"include"_ and any occurrence of the word _"package"_ will be replaced with _"module"_. Once all the labels have been replaced, the program will compare both lines one more time, if they are the same the difference will be discarded from the results.
+
 ![screenshot](screenshot.png)
 
 Comparison tools are used for various reasons. When one wishes to compare binary files, byte-level is probably best. But if one wishes to compare text files or computer programs, a side-by-side visual comparison is usually best. This gives the user the chance to decide which file is the preferred one to retain, if the files should be merged to create one containing all of the differences, or perhaps to keep them both as-is for later reference, through some form of "versioning" control.
