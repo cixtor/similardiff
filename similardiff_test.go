@@ -285,3 +285,39 @@ func TestCaptureAddedLinesMany(t *testing.T) {
 
 	CheckTestData(t, s, 4, expected)
 }
+
+func TestDiscardSimilarities(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"13d12",
+		"> A | content in file B, line 13",
+		"173d172",
+		"> B | content in file B, line 173",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.SetChanges("content:foo,file:bar,line:lorem")
+
+	s.CaptureChanges()
+
+	s.DiscardSimilarities()
+
+	expected := make([]SimilarDiffPair, 2)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "A | content in file B, line 13",
+		Right:     "",
+		LeftLine:  13,
+		RightLine: 0,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "B | content in file B, line 173",
+		Right:     "",
+		LeftLine:  173,
+		RightLine: 0,
+	}
+
+	CheckTestData(t, s, 2, expected)
+}
