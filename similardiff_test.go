@@ -6,15 +6,9 @@ import (
 
 func CheckTestData(t *testing.T, s *SimilarDiff, total int, expected []SimilarDiffPair) {
 	if len(s.Pairs) != total {
-		t.Logf("-%d", total)
-		t.Logf("+%d\n", len(s.Pairs))
+		t.Logf("-%d ~> %#v", total, expected)
+		t.Logf("+%d ~> %#v", len(s.Pairs), s.Pairs)
 		t.Fatal("Number of detected pairs is incorrect")
-	}
-
-	if s.Pairs[0] != expected[0] {
-		t.Logf("-%#v\n", expected[0])
-		t.Logf("+%#v\n", s.Pairs[0])
-		t.Fatal("Failure detecting changes in single lines: Index[0]")
 	}
 
 	for i := 0; i < total; i++ {
@@ -22,8 +16,8 @@ func CheckTestData(t *testing.T, s *SimilarDiff, total int, expected []SimilarDi
 			continue
 		}
 
-		t.Logf("-%#v\n", expected[i])
-		t.Logf("+%#v\n", s.Pairs[i])
+		t.Logf("-%#v", expected[i])
+		t.Logf("+%#v", s.Pairs[i])
 		t.Fatalf("Failure detecting and processing diff: Index[%d]", i)
 	}
 }
@@ -130,6 +124,53 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 	}
 
 	CheckTestData(t, s, 6, expected)
+}
+
+func TestCaptureChangedLinesManyAlternative(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"296c300,303",
+		"< content in file A, line 296",
+		"---",
+		"> content in file B, line 300",
+		"> content in file B, line 301",
+		"> content in file B, line 302",
+		"> content in file B, line 303",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 4)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "content in file A, line 296",
+		Right:     "content in file B, line 300",
+		LeftLine:  296,
+		RightLine: 300,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "",
+		Right:     "content in file B, line 301",
+		LeftLine:  0,
+		RightLine: 301,
+	}
+	expected[2] = SimilarDiffPair{
+		Left:      "",
+		Right:     "content in file B, line 302",
+		LeftLine:  0,
+		RightLine: 302,
+	}
+	expected[3] = SimilarDiffPair{
+		Left:      "",
+		Right:     "content in file B, line 303",
+		LeftLine:  0,
+		RightLine: 303,
+	}
+
+	CheckTestData(t, s, 4, expected)
 }
 
 func TestCaptureDeletedLinesOne(t *testing.T) {

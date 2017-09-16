@@ -87,7 +87,12 @@ func (s *SimilarDiff) CaptureChanges() {
 			continue
 		}
 
-		if s.CaptureChangedLinesMany() {
+		if s.CaptureChangedLinesManyBothSides() {
+			idx = s.Cursor
+			continue
+		}
+
+		if s.CaptureChangedLinesManyRightSide() {
 			idx = s.Cursor
 			continue
 		}
@@ -140,7 +145,7 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 	return true
 }
 
-// CaptureChangedLinesMany detects and captures multiple-line diff.
+// CaptureChangedLinesManyBothSides detects and captures multiple-line diff.
 // 1,3c7,9 | changed lines (file A, file B)
 // < A     | content in file A, line 1
 // < B     | content in file A, line 2
@@ -149,7 +154,7 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 // > X     | content in file B, line 7
 // > Y     | content in file B, line 8
 // > Z     | content in file B, line 9
-func (s *SimilarDiff) CaptureChangedLinesMany() bool {
+func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 	header := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
 
 	if header.FindString(s.Lines[s.Cursor]) == "" {
@@ -185,6 +190,48 @@ func (s *SimilarDiff) CaptureChangedLinesMany() bool {
 
 	for _, group := range subgroups {
 		s.Pairs = append(s.Pairs, group)
+	}
+
+	return true
+}
+
+// CaptureChangedLinesManyRightSide detects and captures multiple-line diff.
+// 296c300,303 | changed lines (file A, file B)
+// < A         | content in file A, line 296
+// ---         | change separator
+// > B         | content in file B, line 300
+// > X         | content in file B, line 301
+// > Y         | content in file B, line 302
+// > Z         | content in file B, line 303
+func (s *SimilarDiff) CaptureChangedLinesManyRightSide() bool {
+	header := regexp.MustCompile(`^([0-9]+)c([0-9]+),([0-9]+)$`)
+
+	if header.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
+	numLeftA := s.ConvertAtoi(m[1])  /* 296c300,303 -> 296 */
+	numRightA := s.ConvertAtoi(m[2]) /* 296c300,303 -> 300 */
+	numRightB := s.ConvertAtoi(m[3]) /* 296c300,303 -> 303 */
+
+	/* capture pairing differences */
+	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Left:      s.Lines[s.Cursor+1][2:],
+		Right:     s.Lines[s.Cursor+3][2:],
+		LeftLine:  numLeftA,
+		RightLine: numRightA,
+	})
+	s.Cursor += 3
+
+	/* capture orphan differences; added lines */
+	howmany := (numRightB - numRightA) /* exclusive */
+	for i := 0; i < howmany; i++ {
+		s.Cursor++ /* move cursor ahead */
+		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Right:     s.Lines[s.Cursor][2:],
+			RightLine: numRightA + i + 1,
+		})
 	}
 
 	return true
@@ -233,7 +280,6 @@ func (s *SimilarDiff) CaptureDeletedLinesMany() bool {
 
 	for i := numLeftA; i <= numLeftB; i++ {
 		s.Cursor++ /* move cursor ahead */
-
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
 			Left:     s.Lines[s.Cursor][2:],
 			LeftLine: i, /* real line number */
@@ -286,7 +332,6 @@ func (s *SimilarDiff) CaptureAddedLinesMany() bool {
 
 	for i := numRightA; i <= numRightB; i++ {
 		s.Cursor++ /* move cursor ahead */
-
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
 			Right:     s.Lines[s.Cursor][2:],
 			RightLine: i, /* real line number */
