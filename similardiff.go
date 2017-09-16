@@ -146,6 +146,9 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 }
 
 // CaptureChangedLinesManyBothSides detects and captures multiple-line diff.
+//
+// Differences where the left and right side are balanced.
+//
 // 1,3c7,9 | changed lines (file A, file B)
 // < A     | content in file A, line 1
 // < B     | content in file A, line 2
@@ -154,6 +157,19 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 // > X     | content in file B, line 7
 // > Y     | content in file B, line 8
 // > Z     | content in file B, line 9
+//
+// Differences where the left and right side are unbalanced (added lines).
+//
+// 1,3c10,14 | changed lines (file A, file B)
+// < A       | content in file A, line 1
+// < B       | content in file A, line 2
+// < C       | content in file A, line 3
+// ---       | change separator
+// > V       | content in file B, line 10
+// > W       | content in file B, line 11
+// > X       | content in file B, line 12
+// > Y       | content in file B, line 13
+// > Z       | content in file B, line 14
 func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 	header := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
 
@@ -161,35 +177,54 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 		return false
 	}
 
-	var howmany int
-
 	m := header.FindStringSubmatch(s.Lines[s.Cursor])
 	numLeftA := s.ConvertAtoi(m[1])  /* 1,3c7,9 -> 1 */
 	numLeftB := s.ConvertAtoi(m[2])  /* 1,3c7,9 -> 3 */
 	numRightA := s.ConvertAtoi(m[3]) /* 1,3c7,9 -> 7 */
 	numRightB := s.ConvertAtoi(m[4]) /* 1,3c7,9 -> 9 */
 
-	howmany = (numLeftB - numLeftA) + 1 /* inclusive */
-	subgroups := make([]SimilarDiffPair, howmany)
+	numItemsLeft := (numLeftB - numLeftA) + 1    /* inclusive */
+	numItemsRight := (numRightB - numRightA) + 1 /* inclusive */
 
-	s.Cursor++ /* skip diff header */
+	var howmany int
+	var hasAddedLines bool
 
-	for i := 0; i < howmany; i++ {
-		subgroups[i].Left = s.Lines[s.Cursor+i][2:]
-		subgroups[i].LeftLine = numLeftA + i
+	if numItemsLeft == numItemsRight {
+		/* balanced; pairing sides */
+		howmany = numItemsLeft
+	} else if numItemsLeft > numItemsRight {
+		/* unbalanced; deleted lines */
+		howmany = numItemsRight
+	} else if numItemsLeft < numItemsRight {
+		/* unbalanced; added lines */
+		howmany = numItemsLeft
+		hasAddedLines = true
 	}
 
-	s.Cursor += howmany + 1 /* left matches + separator */
-
-	howmany = (numRightB - numRightA) + 1 /* inclusive */
-
+	/* capture pairing differences */
 	for i := 0; i < howmany; i++ {
-		subgroups[i].Right = s.Lines[s.Cursor+i][2:]
-		subgroups[i].RightLine = numRightA + i
+		s.Cursor++ /* move cursor ahead */
+		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Left:      s.Lines[s.Cursor][2:],
+			Right:     s.Lines[s.Cursor+howmany+1][2:],
+			LeftLine:  numLeftA + i,
+			RightLine: numRightA + i,
+		})
 	}
 
-	for _, group := range subgroups {
-		s.Pairs = append(s.Pairs, group)
+	s.Cursor += howmany + 1 /*pairs + separator */
+
+	if hasAddedLines {
+		/* how many items remain in the stack */
+		remaining := numItemsRight - numItemsLeft
+		/* unbalanced differences; added lines */
+		for i := 0; i < remaining; i++ {
+			s.Cursor++ /* move cursor ahead */
+			s.Pairs = append(s.Pairs, SimilarDiffPair{
+				Right:     s.Lines[s.Cursor][2:],
+				RightLine: numRightA + howmany + i,
+			})
+		}
 	}
 
 	return true

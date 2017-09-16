@@ -58,7 +58,7 @@ func TestCaptureChangedLinesOne(t *testing.T) {
 	CheckTestData(t, s, 2, expected)
 }
 
-func TestCaptureChangedLinesMany(t *testing.T) {
+func TestCaptureChangedLinesManyBothSides(t *testing.T) {
 	s := NewSimilarDiff()
 
 	s.Lines = []string{
@@ -126,7 +126,63 @@ func TestCaptureChangedLinesMany(t *testing.T) {
 	CheckTestData(t, s, 6, expected)
 }
 
-func TestCaptureChangedLinesManyAlternative(t *testing.T) {
+func TestCaptureChangedLinesManyBothSidesAdded(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"1,3c10,14",
+		"< A | content in file A, line 1",
+		"< B | content in file A, line 2",
+		"< C | content in file A, line 3",
+		"---",
+		"> V | content in file B, line 10",
+		"> W | content in file B, line 11",
+		"> X | content in file B, line 12",
+		"> Y | content in file B, line 13",
+		"> Z | content in file B, line 14",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 5)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "A | content in file A, line 1",
+		Right:     "V | content in file B, line 10",
+		LeftLine:  1,
+		RightLine: 10,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "B | content in file A, line 2",
+		Right:     "W | content in file B, line 11",
+		LeftLine:  2,
+		RightLine: 11,
+	}
+	expected[2] = SimilarDiffPair{
+		Left:      "C | content in file A, line 3",
+		Right:     "X | content in file B, line 12",
+		LeftLine:  3,
+		RightLine: 12,
+	}
+	expected[3] = SimilarDiffPair{
+		Left:      "",
+		Right:     "Y | content in file B, line 13",
+		LeftLine:  0,
+		RightLine: 13,
+	}
+	expected[4] = SimilarDiffPair{
+		Left:      "",
+		Right:     "Z | content in file B, line 14",
+		LeftLine:  0,
+		RightLine: 14,
+	}
+
+	CheckTestData(t, s, 5, expected)
+}
+
+func TestCaptureChangedLinesManyRightSide(t *testing.T) {
 	s := NewSimilarDiff()
 
 	s.Lines = []string{
