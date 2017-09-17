@@ -187,17 +187,23 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 	numItemsRight := (numRightB - numRightA) + 1 /* inclusive */
 
 	var howmany int
+	var padding int
 	var hasAddedLines bool
+	var hasDeletedLines bool
 
 	if numItemsLeft == numItemsRight {
 		/* balanced; pairing sides */
 		howmany = numItemsLeft
+		padding = numItemsLeft
 	} else if numItemsLeft > numItemsRight {
 		/* unbalanced; deleted lines */
 		howmany = numItemsRight
+		padding = numItemsLeft
+		hasDeletedLines = true
 	} else if numItemsLeft < numItemsRight {
 		/* unbalanced; added lines */
 		howmany = numItemsLeft
+		padding = numItemsLeft
 		hasAddedLines = true
 	}
 
@@ -206,15 +212,14 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
 			Left:      s.Lines[s.Cursor][2:],
-			Right:     s.Lines[s.Cursor+howmany+1][2:],
+			Right:     s.Lines[s.Cursor+padding+1][2:],
 			LeftLine:  numLeftA + i,
 			RightLine: numRightA + i,
 		})
 	}
 
-	s.Cursor += howmany + 1 /*pairs + separator */
-
 	if hasAddedLines {
+		s.Cursor += howmany + 1 /* move ahead */
 		/* how many items remain in the stack */
 		remaining := numItemsRight - numItemsLeft
 		/* unbalanced differences; added lines */
@@ -223,6 +228,19 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 			s.Pairs = append(s.Pairs, SimilarDiffPair{
 				Right:     s.Lines[s.Cursor][2:],
 				RightLine: numRightA + howmany + i,
+			})
+		}
+	}
+
+	if hasDeletedLines {
+		/* how many items remain in the stack */
+		remaining := numItemsLeft - numItemsRight
+		/* unbalanced differences; deleted lines */
+		for i := 0; i < remaining; i++ {
+			s.Cursor++ /* move cursor ahead */
+			s.Pairs = append(s.Pairs, SimilarDiffPair{
+				Left:     s.Lines[s.Cursor][2:],
+				LeftLine: numLeftA + howmany + i,
 			})
 		}
 	}
