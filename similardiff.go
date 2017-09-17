@@ -97,6 +97,11 @@ func (s *SimilarDiff) CaptureChanges() {
 			continue
 		}
 
+		if s.CaptureChangedLinesManyLeftSide() {
+			idx = s.Cursor
+			continue
+		}
+
 		if s.CaptureDeletedLinesOne() {
 			idx = s.Cursor
 			continue
@@ -170,6 +175,19 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 // > X       | content in file B, line 12
 // > Y       | content in file B, line 13
 // > Z       | content in file B, line 14
+//
+// Differences where the left and right side are unbalanced (deleted lines).
+//
+// 1,5c10,12 | changed lines (file A, file B)
+// < A       | content in file A, line 1
+// < B       | content in file A, line 2
+// < C       | content in file A, line 3
+// < D       | content in file A, line 4
+// < E       | content in file A, line 5
+// ---       | change separator
+// > X       | content in file B, line 10
+// > Y       | content in file B, line 11
+// > Z       | content in file B, line 12
 func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 	header := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+),([0-9]+)$`)
 
@@ -284,6 +302,48 @@ func (s *SimilarDiff) CaptureChangedLinesManyRightSide() bool {
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
 			Right:     s.Lines[s.Cursor][2:],
 			RightLine: numRightA + i + 1,
+		})
+	}
+
+	return true
+}
+
+// CaptureChangedLinesManyLeftSide detects and captures multiple-line diff.
+// 126,128c130 | changed lines (file A, file B)
+// < A         | content in file A, line 126
+// < B         | content in file A, line 127
+// < C         | content in file A, line 128
+// ---         | change separator
+// > X         | content in file B, line 130
+func (s *SimilarDiff) CaptureChangedLinesManyLeftSide() bool {
+	header := regexp.MustCompile(`^([0-9]+),([0-9]+)c([0-9]+)$`)
+
+	if header.FindString(s.Lines[s.Cursor]) == "" {
+		return false
+	}
+
+	m := header.FindStringSubmatch(s.Lines[s.Cursor])
+	numLeftA := s.ConvertAtoi(m[1])  /* 126,128c130 -> 126 */
+	numLeftB := s.ConvertAtoi(m[2])  /* 126,128c130 -> 128 */
+	numRightA := s.ConvertAtoi(m[3]) /* 126,128c130 -> 130 */
+
+	/* capture pairing differences */
+	s.Cursor++ /* move cursor ahead */
+	padding := (numLeftB - numLeftA) + 2
+	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Left:      s.Lines[s.Cursor][2:],
+		Right:     s.Lines[s.Cursor+padding][2:],
+		LeftLine:  numLeftA,
+		RightLine: numRightA,
+	})
+
+	/* capture orphan differences; added lines */
+	remaining := (numLeftB - numLeftA) /* exclusive */
+	for i := 0; i < remaining; i++ {
+		s.Cursor++ /* move cursor ahead */
+		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Left:     s.Lines[s.Cursor][2:],
+			LeftLine: numLeftA + i + 1,
 		})
 	}
 

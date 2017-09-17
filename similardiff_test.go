@@ -238,6 +238,46 @@ func TestCaptureChangedLinesManyBothSidesDeleted(t *testing.T) {
 	CheckTestData(t, s, 5, expected)
 }
 
+func TestCaptureChangedLinesManyBothSidesDeletedSmall(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"126,128c130",
+		"< A | content in file A, line 126",
+		"< B | content in file A, line 127",
+		"< C | content in file A, line 128",
+		"---",
+		"> X | content in file B, line 130",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.CaptureChanges()
+
+	expected := make([]SimilarDiffPair, 3)
+
+	expected[0] = SimilarDiffPair{
+		Left:      "A | content in file A, line 126",
+		Right:     "X | content in file B, line 130",
+		LeftLine:  126,
+		RightLine: 130,
+	}
+	expected[1] = SimilarDiffPair{
+		Left:      "B | content in file A, line 127",
+		Right:     "",
+		LeftLine:  127,
+		RightLine: 0,
+	}
+	expected[2] = SimilarDiffPair{
+		Left:      "C | content in file A, line 128",
+		Right:     "",
+		LeftLine:  128,
+		RightLine: 0,
+	}
+
+	CheckTestData(t, s, 3, expected)
+}
+
 func TestCaptureChangedLinesManyRightSide(t *testing.T) {
 	s := NewSimilarDiff()
 
