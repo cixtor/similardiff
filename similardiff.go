@@ -55,6 +55,7 @@ func (s *SimilarDiff) SetChanges(name string) {
 
 	if err != nil {
 		fmt.Println(err)
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -62,6 +63,7 @@ func (s *SimilarDiff) SetChanges(name string) {
 
 	if err != nil {
 		fmt.Println(err)
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -96,6 +98,7 @@ func (s *SimilarDiff) SetChanges(name string) {
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
+		flag.Usage()
 		os.Exit(1)
 	}
 }
@@ -574,7 +577,31 @@ func (s *SimilarDiff) PrintGreen(format string, text ...interface{}) {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Println("Similar Diff")
+		fmt.Println("https://cixtor.com/")
+		fmt.Println("https://github.com/cixtor/similardiff")
+		fmt.Println("https://en.wikipedia.org/wiki/Edit_distance")
+		fmt.Println("https://en.wikipedia.org/wiki/File_comparison")
+		fmt.Println("https://en.wikipedia.org/wiki/Levenshtein_distance")
+		fmt.Println()
+		fmt.Println("Usage:")
+		fmt.Println("  similardiff [FILE_A] [FILE_B]")
+		fmt.Println()
+		fmt.Println("Settings:")
+		fmt.Println("  export SIMILARDIFF_COLOR=true")
+		fmt.Println("  echo \"#file_a:file_b\" 1>> similardiff.ini")
+		fmt.Println("  echo \"import:include\" 1>> similardiff.ini")
+		fmt.Println("  echo \"package:module\" 1>> similardiff.ini")
+		fmt.Println("  similardiff file_a.txt file_b.txt")
+	}
+
 	flag.Parse()
+
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(2)
+	}
 
 	s := NewSimilarDiff()
 

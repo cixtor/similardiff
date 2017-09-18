@@ -16,12 +16,13 @@ go get -u github.com/cixtor/similardiff
 
 ```
 $ export SIMILARDIFF_COLOR=true
-$ similardiff [FILE_A] [FILE_B]
-$ similardiff [FILE_A] [FILE_B] [SIMILARITIES]
-$ similardiff a.txt b.txt "import:include,package:module"
+$ echo "#file_a:file_b" 1>> similardiff.ini
+$ echo "import:include" 1>> similardiff.ini
+$ echo "package:module" 1>> similardiff.ini
+$ similardiff file_a.txt file_b.txt
 ```
 
-In this example, the content of file `a.txt` will be compared with the content of file `b.txt` and for every line with discrepancies the program will execute a string replacement using the labels passed as the third argument in the terminal. Here, any occurrence of the word _"import"_ will be replaced with _"include"_ and any occurrence of the word _"package"_ will be replaced with _"module"_. Once all the labels have been replaced, the program will compare both lines one more time, if they are the same the difference will be discarded from the results.
+In this example, the content of file `a.txt` will be compared with the content of file `b.txt` and for every line with discrepancies the program will execute a string replacement using the key-value pairs contained inside the configuration at `similardiff.ini` which is loaded from the current working directory . Here, any occurrence of the word _"import"_ will be replaced with _"include"_ and any occurrence of the word _"package"_ will be replaced with _"module"_. Once all the labels have been replaced, the program will compare both lines one more time, if they are the same the difference will be discarded from the results.
 
 ![screenshot](screenshot.png)
 
