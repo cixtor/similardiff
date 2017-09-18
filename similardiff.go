@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -50,24 +51,52 @@ func (s *SimilarDiff) SetColorize(value string) {
 }
 
 func (s *SimilarDiff) SetChanges(name string) {
+	folder, err := os.Getwd()
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	file, err := os.Open(folder + "/" + name)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	defer file.Close()
+
+	var line string
 	var parts []string
 
-	changes := strings.Split(name, ",")
+	scanner := bufio.NewScanner(file)
 
-	for _, change := range changes {
-		if len(change) < 3 {
+	for scanner.Scan() {
+		line = scanner.Text()
+		line = strings.TrimSpace(line)
+
+		/* expect x=y */
+		if len(line) < 3 {
 			continue
 		}
 
-		if !strings.Contains(change, ":") {
+		/* skip comments */
+		if line[0] == '#' {
 			continue
 		}
 
-		parts = strings.Split(change, ":")
+		parts = strings.Split(scanner.Text(), "=")
+
 		s.Changes = append(s.Changes, SimilarDiffChange{
 			Old: parts[0],
 			New: parts[1],
 		})
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -551,7 +580,7 @@ func main() {
 
 	s.SetFileA(flag.Arg(0))
 	s.SetFileB(flag.Arg(1))
-	s.SetChanges(flag.Arg(2))
+	s.SetChanges("similardiff.ini")
 	s.SetColorize(os.Getenv("SIMILARDIFF_COLOR"))
 
 	s.PrettyPrint()
