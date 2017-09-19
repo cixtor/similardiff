@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+const changed rune = 'c'
+const added rune = 'a'
+const deleted rune = 'd'
+
 type SimilarDiff struct {
 	Cursor   int
 	FileA    string
@@ -23,6 +27,7 @@ type SimilarDiff struct {
 }
 
 type SimilarDiffPair struct {
+	Group     rune
 	Left      string
 	Right     string
 	LeftLine  int
@@ -171,6 +176,7 @@ func (s *SimilarDiff) CaptureChangedLinesOne() bool {
 	m := header.FindStringSubmatch(s.Lines[s.Cursor])
 
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Group:     changed,
 		Left:      s.Lines[s.Cursor+1][2:],
 		Right:     s.Lines[s.Cursor+3][2:],
 		LeftLine:  s.ConvertAtoi(m[1]),
@@ -261,6 +267,7 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 	for i := 0; i < howmany; i++ {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Group:     changed,
 			Left:      s.Lines[s.Cursor][2:],
 			Right:     s.Lines[s.Cursor+padding+1][2:],
 			LeftLine:  numLeftA + i,
@@ -276,6 +283,7 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 		for i := 0; i < remaining; i++ {
 			s.Cursor++ /* move cursor ahead */
 			s.Pairs = append(s.Pairs, SimilarDiffPair{
+				Group:     added,
 				Right:     s.Lines[s.Cursor][2:],
 				RightLine: numRightA + howmany + i,
 			})
@@ -289,6 +297,7 @@ func (s *SimilarDiff) CaptureChangedLinesManyBothSides() bool {
 		for i := 0; i < remaining; i++ {
 			s.Cursor++ /* move cursor ahead */
 			s.Pairs = append(s.Pairs, SimilarDiffPair{
+				Group:    deleted,
 				Left:     s.Lines[s.Cursor][2:],
 				LeftLine: numLeftA + howmany + i,
 			})
@@ -320,6 +329,7 @@ func (s *SimilarDiff) CaptureChangedLinesManyRightSide() bool {
 
 	/* capture pairing differences */
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Group:     changed,
 		Left:      s.Lines[s.Cursor+1][2:],
 		Right:     s.Lines[s.Cursor+3][2:],
 		LeftLine:  numLeftA,
@@ -332,6 +342,7 @@ func (s *SimilarDiff) CaptureChangedLinesManyRightSide() bool {
 	for i := 0; i < howmany; i++ {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Group:     added,
 			Right:     s.Lines[s.Cursor][2:],
 			RightLine: numRightA + i + 1,
 		})
@@ -363,17 +374,19 @@ func (s *SimilarDiff) CaptureChangedLinesManyLeftSide() bool {
 	s.Cursor++ /* move cursor ahead */
 	padding := (numLeftB - numLeftA) + 2
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Group:     changed,
 		Left:      s.Lines[s.Cursor][2:],
 		Right:     s.Lines[s.Cursor+padding][2:],
 		LeftLine:  numLeftA,
 		RightLine: numRightA,
 	})
 
-	/* capture orphan differences; added lines */
+	/* capture orphan differences; deleted lines */
 	remaining := (numLeftB - numLeftA) /* exclusive */
 	for i := 0; i < remaining; i++ {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Group:    deleted,
 			Left:     s.Lines[s.Cursor][2:],
 			LeftLine: numLeftA + i + 1,
 		})
@@ -399,6 +412,7 @@ func (s *SimilarDiff) CaptureDeletedLinesOne() bool {
 	s.Cursor++ /* move cursor ahead */
 
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Group:    deleted,
 		Left:     s.Lines[s.Cursor][2:],
 		LeftLine: s.ConvertAtoi(m[1]),
 	})
@@ -426,6 +440,7 @@ func (s *SimilarDiff) CaptureDeletedLinesMany() bool {
 	for i := numLeftA; i <= numLeftB; i++ {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Group:    deleted,
 			Left:     s.Lines[s.Cursor][2:],
 			LeftLine: i, /* real line number */
 		})
@@ -451,6 +466,7 @@ func (s *SimilarDiff) CaptureAddedLinesOne() bool {
 	s.Cursor++ /* move cursor ahead */
 
 	s.Pairs = append(s.Pairs, SimilarDiffPair{
+		Group:     added,
 		Right:     s.Lines[s.Cursor][2:],
 		RightLine: s.ConvertAtoi(m[2]),
 	})
@@ -478,6 +494,7 @@ func (s *SimilarDiff) CaptureAddedLinesMany() bool {
 	for i := numRightA; i <= numRightB; i++ {
 		s.Cursor++ /* move cursor ahead */
 		s.Pairs = append(s.Pairs, SimilarDiffPair{
+			Group:     added,
 			Right:     s.Lines[s.Cursor][2:],
 			RightLine: i, /* real line number */
 		})
@@ -495,6 +512,13 @@ func (s *SimilarDiff) DiscardSimilarities() {
 
 	for i := 0; i < totalPairs; i++ {
 		group = s.Pairs[i]
+
+		/* cannot compare lines that were added or deleted */
+		if group.Group == added || group.Group == deleted {
+			notDiscarded = append(notDiscarded, group)
+			continue
+		}
+
 		temp = group.Left
 
 		for _, change := range s.Changes {

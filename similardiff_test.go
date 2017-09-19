@@ -43,12 +43,14 @@ func TestCaptureChangedLinesOne(t *testing.T) {
 	expected := make([]SimilarDiffPair, 2)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A | content in file A",
 		Right:     "B | content in file B",
 		LeftLine:  1,
 		RightLine: 1,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "X | content in file X",
 		Right:     "Y | content in file Y",
 		LeftLine:  10,
@@ -87,36 +89,42 @@ func TestCaptureChangedLinesManyBothSides(t *testing.T) {
 	expected := make([]SimilarDiffPair, 6)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A     | content in file A, line 1",
 		Right:     "X     | content in file B, line 7",
 		LeftLine:  1,
 		RightLine: 7,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "B     | content in file A, line 2",
 		Right:     "Y     | content in file B, line 8",
 		LeftLine:  2,
 		RightLine: 8,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "C     | content in file A, line 3",
 		Right:     "Z     | content in file B, line 9",
 		LeftLine:  3,
 		RightLine: 9,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A     | content in file A, line 10",
 		Right:     "X     | content in file B, line 20",
 		LeftLine:  10,
 		RightLine: 20,
 	}
 	expected[4] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "B     | content in file A, line 11",
 		Right:     "Y     | content in file B, line 21",
 		LeftLine:  11,
 		RightLine: 21,
 	}
 	expected[5] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "C     | content in file A, line 12",
 		Right:     "Z     | content in file B, line 22",
 		LeftLine:  12,
@@ -149,30 +157,35 @@ func TestCaptureChangedLinesManyBothSidesAdded(t *testing.T) {
 	expected := make([]SimilarDiffPair, 5)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A | content in file A, line 1",
 		Right:     "V | content in file B, line 10",
 		LeftLine:  1,
 		RightLine: 10,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "B | content in file A, line 2",
 		Right:     "W | content in file B, line 11",
 		LeftLine:  2,
 		RightLine: 11,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "C | content in file A, line 3",
 		Right:     "X | content in file B, line 12",
 		LeftLine:  3,
 		RightLine: 12,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "Y | content in file B, line 13",
 		LeftLine:  0,
 		RightLine: 13,
 	}
 	expected[4] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "Z | content in file B, line 14",
 		LeftLine:  0,
@@ -205,30 +218,35 @@ func TestCaptureChangedLinesManyBothSidesDeleted(t *testing.T) {
 	expected := make([]SimilarDiffPair, 5)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A | content in file A, line 1",
 		Right:     "X | content in file B, line 10",
 		LeftLine:  1,
 		RightLine: 10,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "B | content in file A, line 2",
 		Right:     "Y | content in file B, line 11",
 		LeftLine:  2,
 		RightLine: 11,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "C | content in file A, line 3",
 		Right:     "Z | content in file B, line 12",
 		LeftLine:  3,
 		RightLine: 12,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "D | content in file A, line 4",
 		Right:     "",
 		LeftLine:  4,
 		RightLine: 0,
 	}
 	expected[4] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "E | content in file A, line 5",
 		Right:     "",
 		LeftLine:  5,
@@ -257,18 +275,21 @@ func TestCaptureChangedLinesManyBothSidesDeletedSmall(t *testing.T) {
 	expected := make([]SimilarDiffPair, 3)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "A | content in file A, line 126",
 		Right:     "X | content in file B, line 130",
 		LeftLine:  126,
 		RightLine: 130,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "B | content in file A, line 127",
 		Right:     "",
 		LeftLine:  127,
 		RightLine: 0,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "C | content in file A, line 128",
 		Right:     "",
 		LeftLine:  128,
@@ -298,24 +319,28 @@ func TestCaptureChangedLinesManyRightSide(t *testing.T) {
 	expected := make([]SimilarDiffPair, 4)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'c',
 		Left:      "content in file A, line 296",
 		Right:     "content in file B, line 300",
 		LeftLine:  296,
 		RightLine: 300,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "content in file B, line 301",
 		LeftLine:  0,
 		RightLine: 301,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "content in file B, line 302",
 		LeftLine:  0,
 		RightLine: 302,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "content in file B, line 303",
 		LeftLine:  0,
@@ -342,12 +367,14 @@ func TestCaptureDeletedLinesOne(t *testing.T) {
 	expected := make([]SimilarDiffPair, 2)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "A | content in file A, line 13",
 		Right:     "",
 		LeftLine:  13,
 		RightLine: 0,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "B | content in file A, line 43",
 		Right:     "",
 		LeftLine:  43,
@@ -375,24 +402,28 @@ func TestCaptureDeletedLinesMany(t *testing.T) {
 	expected := make([]SimilarDiffPair, 4)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "W     | content in file A, line 10",
 		Right:     "",
 		LeftLine:  10,
 		RightLine: 0,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "X     | content in file A, line 11",
 		Right:     "",
 		LeftLine:  11,
 		RightLine: 0,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "Y     | content in file A, line 12",
 		Right:     "",
 		LeftLine:  12,
 		RightLine: 0,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "Z     | content in file A, line 13",
 		Right:     "",
 		LeftLine:  13,
@@ -419,12 +450,14 @@ func TestCaptureAddedLinesOne(t *testing.T) {
 	expected := make([]SimilarDiffPair, 2)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "A | content in file B, line 10",
 		LeftLine:  0,
 		RightLine: 10,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "B | content in file B, line 20",
 		LeftLine:  0,
@@ -452,24 +485,28 @@ func TestCaptureAddedLinesMany(t *testing.T) {
 	expected := make([]SimilarDiffPair, 4)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "W     | content in file B, line 10",
 		LeftLine:  0,
 		RightLine: 10,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "X     | content in file B, line 11",
 		LeftLine:  0,
 		RightLine: 11,
 	}
 	expected[2] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "Y     | content in file B, line 12",
 		LeftLine:  0,
 		RightLine: 12,
 	}
 	expected[3] = SimilarDiffPair{
+		Group:     'a',
 		Left:      "",
 		Right:     "Z     | content in file B, line 13",
 		LeftLine:  0,
@@ -500,12 +537,14 @@ func TestDiscardSimilarities(t *testing.T) {
 	expected := make([]SimilarDiffPair, 2)
 
 	expected[0] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "A | content in file B, line 13",
 		Right:     "",
 		LeftLine:  13,
 		RightLine: 0,
 	}
 	expected[1] = SimilarDiffPair{
+		Group:     'd',
 		Left:      "B | content in file B, line 173",
 		Right:     "",
 		LeftLine:  173,
