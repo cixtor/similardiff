@@ -64,6 +64,11 @@ func (s *SimilarDiff) SetChanges(name string) {
 		os.Exit(1)
 	}
 
+	/* configuration file does not exists; skip changes */
+	if _, err := os.Stat(folder + "/" + name); os.IsNotExist(err) {
+		return
+	}
+
 	file, err := os.Open(folder + "/" + name)
 
 	if err != nil {

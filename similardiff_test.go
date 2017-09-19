@@ -528,7 +528,9 @@ func TestDiscardSimilarities(t *testing.T) {
 
 	s.Total = len(s.Lines)
 
-	s.SetChanges("content:foo,file:bar,line:lorem")
+	s.Changes = append(s.Changes, SimilarDiffChange{"content", "foo"})
+	s.Changes = append(s.Changes, SimilarDiffChange{"file", "bar"})
+	s.Changes = append(s.Changes, SimilarDiffChange{"line", "lorem"})
 
 	s.CaptureChanges()
 
@@ -552,4 +554,33 @@ func TestDiscardSimilarities(t *testing.T) {
 	}
 
 	CheckTestData(t, s, 2, expected)
+}
+
+func TestNoConfiguration(t *testing.T) {
+	s := NewSimilarDiff()
+
+	s.Lines = []string{
+		"13d12",
+		"> A | content in file B, line 13",
+	}
+
+	s.Total = len(s.Lines)
+
+	s.SetChanges("similardiff-not-found.ini")
+
+	s.CaptureChanges()
+
+	s.DiscardSimilarities()
+
+	expected := make([]SimilarDiffPair, 1)
+
+	expected[0] = SimilarDiffPair{
+		Group:     'd',
+		Left:      "A | content in file B, line 13",
+		Right:     "",
+		LeftLine:  13,
+		RightLine: 0,
+	}
+
+	CheckTestData(t, s, 1, expected)
 }
